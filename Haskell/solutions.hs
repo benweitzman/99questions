@@ -1,4 +1,6 @@
 import System.Random
+import Control.Monad (replicateM)
+import Data.List (tails)
 
 -- Problem 1
 myLast :: [a] -> a
@@ -148,10 +150,37 @@ range x y = [x..y]
 
 -- Problem 23
 rnd_select :: [a] -> Int -> IO [a]
-rnd_select xs n 
-  | n > length xs = error "More elements than exist in list"
-rnd_select xs 0 = return []                    
-rnd_select xs n = do g <- newStdGen                    
-                     (r, g') <- randomR (0, length xs - 1) g
-                     (xs !! r):(rnd_select (removeAt r xs) (n - 1))                    
-                   
+rnd_select [] n
+  | n > 0 = error "Selection from empty list"
+rnd_select xs n = do rs <- replicateM n $ getStdRandom $ randomR (0, length xs - 1)
+                     return $ [xs !! r | r <- rs]
+
+-- Problem 24
+rnd_combi :: [a] -> Int -> IO [a]
+rnd_combi [] n
+  | n > 0 = error "Selection from empty list"
+  | otherwise = return []
+rnd_combi l@(x:xs) n =  do r <- getStdRandom $ randomR (0 :: Float, 1)
+                           l' <- if r > (fromIntegral n)/(fromIntegral . length $ l)
+                                 then rnd_combi xs n
+                                 else do xs' <- rnd_combi xs (n - 1)
+                                         return (x:xs')
+                           return l'
+diff_select :: Int -> Int -> IO [Int]                                        
+diff_select x y = rnd_combi [1..y] x
+                             
+-- Problem 25
+rnd_permu :: [a] -> IO [a]
+rnd_permu [] = return []
+rnd_permu l = do r <- getStdRandom $ randomR (1, length l)
+                 let (x, xs) = removeAt r l
+                 xs' <- rnd_permu xs
+                 return $ x:xs'
+                 
+-- Problem 26                 
+combinations :: Int -> [a] -> [[a]]
+combinations 0 _ = [[]]
+combinations n xs = do y:xs' <- tails xs
+                       ys <- combinations (n - 1) xs'
+                       [y:ys]
+-- Problem 27        
