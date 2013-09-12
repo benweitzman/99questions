@@ -1,6 +1,8 @@
 import System.Random
 import Control.Monad (replicateM)
-import Data.List (tails)
+import Data.List (tails, sortBy, groupBy)
+import Data.Function
+import Data.Maybe (catMaybes)
 
 -- Problem 1
 myLast :: [a] -> a
@@ -183,4 +185,93 @@ combinations 0 _ = [[]]
 combinations n xs = do y:xs' <- tails xs
                        ys <- combinations (n - 1) xs'
                        [y:ys]
--- Problem 27        
+-- Problem 27       
+combination :: Int -> [a] -> [([a],[a])] 
+combination 0 xs     = [([],xs)]
+combination n []     = []
+combination n (x:xs) = ts ++ ds
+  where
+    ts = [ (x:ys,zs) | (ys,zs) <- combination (n-1) xs ]
+    ds = [ (ys,x:zs) | (ys,zs) <- combination  n    xs ]
+
+group :: [Int] -> [a] -> [[[a]]]
+group [] _ = [[]]
+group (n:ns) xs =
+    [ g:gs | (g,rs) <- combination n xs
+           ,  gs    <- group ns rs ]
+
+-- Problem 28
+lsort :: [[a]] -> [[a]]
+lsort = sortBy (\xs ys -> compare (length xs) (length ys))
+
+lfsort :: [[a]] -> [[a]]
+lfsort = concat .lsort . groupBy ((==) `on` length) . lsort
+
+-- Problem 31
+isPrime :: Int -> Bool
+isPrime n | n < 4 = n /= 1 
+isPrime n = all ((/=0) . mod n) $ takeWhile (<= m) candidates 
+        where candidates = (2:3:[x + i | x <- [6,12..], i <- [-1,1]])
+              m = floor . sqrt $ fromIntegral n
+
+-- Problem 32
+myGCD :: Int -> Int -> Int
+myGCD x y 
+    | x == y = x
+    | x > y = myGCD y (x - y)
+    | otherwise = myGCD (y - x) x
+
+-- Problem 33
+coprime :: Int -> Int -> Bool
+coprime x y = myGCD x y == 1
+
+-- Problem 34
+totient :: Int -> Int
+totient x = length [c | c <- [1..x], coprime x c]
+
+-- Problem 35
+primeFactors :: Int -> [Int]
+primeFactors x = primeHelper x [2..x-1]
+  where primeHelper x [] = [x]
+        primeHelper x (a:as) = if x `mod` a == 0
+                               then primeFactors a ++ primeFactors (x `quot` a)
+                               else primeHelper x as
+
+-- Problem 36
+primeFactorsMult :: Int -> [(Int, Int)]
+primeFactorsMult = map (\l@(x:xs) -> (x, length l)) . groupBy (==) . primeFactors
+
+-- Problem 37
+phi :: Int -> Int
+phi x = product [truncate $ fromIntegral (p-1) * (fromIntegral p) ** (fromIntegral (m - 1)) | (p, m) <- primeFactorsMult x]
+
+-- Problem 39
+primes :: Int -> Int -> [Int]
+primes x y = filter isPrime [x..y]
+
+-- Problem 40
+goldbach :: Int -> (Int, Int)
+goldbach n = head [(x, y) | x <- [1..n]
+                          , let y = n - x
+                          , isPrime x
+                          , isPrime y
+                          ]
+
+-- Problem 41
+goldbachList :: Int -> Int -> [(Int, Int)]                          
+goldbachList x y = map goldbach [a | a <- [x..y], even a]
+
+goldbach' :: Int -> Int -> Maybe (Int, Int)
+goldbach' n m = head' [(x, y) | x <- [1..n]
+                             , let y = n - x
+                             , isPrime x
+                             , isPrime y
+                             , x > m
+                             , y > m]  
+                where head' [] = Nothing
+                      head' (x:xs) = Just x
+
+goldbachList' :: Int -> Int -> Int -> [(Int, Int)]
+goldbachList' x y m = catMaybes $ map (\v -> goldbach' v m) [a | a <- [x..y], even a]
+
+
