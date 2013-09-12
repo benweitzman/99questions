@@ -274,4 +274,41 @@ goldbach' n m = head' [(x, y) | x <- [1..n]
 goldbachList' :: Int -> Int -> Int -> [(Int, Int)]
 goldbachList' x y m = catMaybes $ map (\v -> goldbach' v m) [a | a <- [x..y], even a]
 
+-- Problem 46s
+and', or', nand', nor', xor', impl', equ' :: Bool -> Bool -> Bool
+and' = (&&)
+or'  = (||)
+equ' = (==)
+nand' x y = not $ and' x y
+nor' x y = not $ or' x y
+xor' x y = not $ equ' x y
+impl' x y = and' x $ not y
 
+table :: (Bool -> Bool -> Bool) -> IO ()
+table f = do putStrLn $ show True ++ " " ++ show True ++ " " ++ show (f True True)
+             putStrLn $ show True ++ " " ++ show False ++ " " ++ show (f True False)
+             putStrLn $ show False ++ " " ++ show True ++ " " ++ show (f False True)
+             putStrLn $ show False ++ " " ++ show False ++ " " ++ show (f False False)
+
+-- Problem 47
+infixl 4 `or'`
+infixl 6 `and'`
+
+-- Problem 48
+tablen :: Int -> ([Bool] -> Bool) -> IO ()
+tablen n f = apply (truthAssignments n) f
+  where truthAssignments 0 = [[]]
+        truthAssignments n = [x:ys | x <- [True, False], ys <- truthAssignments (n- 1)]
+        apply [] f = do putStr ""
+        apply (x:xs) f = do printAssignment x
+                            putStrLn . show $ f x
+                            apply xs f
+        printAssignment [] = putStr ""
+        printAssignment (x:xs) = do putStr $ show x ++ " "
+                                    printAssignment xs
+
+-- Problem 49
+gray :: Int -> [[Char]]
+gray 0 = [""]
+gray n = ['0':xs | xs <- prev] ++ ['1':ys | ys <- reverse prev]
+  where prev = gray $ n - 1 
